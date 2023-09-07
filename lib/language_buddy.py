@@ -257,8 +257,8 @@ class LanguageBuddy:
             "translate": self.translation_menu,
             "2": self.vocab_game,
             "vocab game": self.vocab_game,
-            "3": self.flashcard_review_forwards,
-            "flashcards": self.flashcard_review_forwards,
+            "3": self.flashcard_review,
+            "flashcards": self.flashcard_review,
             "4": self.main_menu,
             "return to main menu": self.main_menu,
             "5": self.exit_language_buddy,
@@ -571,7 +571,7 @@ FEEDBACK:
         # User reviews flashcards -- can flip between sides 
         pass
 
-        # TODO 9/7 KEVAL -- implement flashcard review game
+    # TODO 9/7 KEVAL -- implement flashcard review game
     def flashcard_review_forwards(self):
         # We query flashcards from db for selected lang (/level?) 
         # User reviews flashcards -- can flip between sides 
