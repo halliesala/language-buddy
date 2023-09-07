@@ -114,6 +114,15 @@ class Session:
         return Session(date, lang, lev, ex_type, points_earned, points_possible, id)
     
     @classmethod
+    def get_last(cls):
+        sql = """
+        SELECT * FROM sessions
+        WHERE id = (SELECT MAX(id) FROM sessions)
+        """
+        (id, date, lang, lev, ex_type, points_earned, points_possible) = CURSOR.execute(sql).fetchone()
+        return Session(date, lang, lev, ex_type, points_earned, points_possible, id) 
+
+    @classmethod
     def total_points_attempted(cls):
         sql = """SELECT SUM(points_possible) FROM sessions"""
         (points,) = CURSOR.execute(sql).fetchone()
@@ -149,7 +158,6 @@ class Session:
         (high_score,) = CURSOR.execute(sql).fetchone()
         return high_score
         
-
 class Flashcard:
     def __init__(self, origin, date, language, level, word, translation, definition, example, id=None):
         self.origin = origin

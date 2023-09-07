@@ -41,15 +41,35 @@ GO_AGAIN = BLUE("""
         ENTER to continue; '.' to return to MENU
         -----------------------------
 """)
+INPUT_ERROR_MESSAGE = BRIGHT(RED("\nError processing input -- please try again.\n"))
+                
+def PROCESS_INPUT():
+    while True:
+        try:
+            user_input = input(CARROTS)
+            return user_input
+        except:
+            print(INPUT_ERROR_MESSAGE)
 
 class LanguageBuddy:
 
     source_language = "English"
-    target_language = "Spanish"
-    difficulty = 'A1 (Beginner)'
+
+    # Use most recent session settings
+    try:
+        last_session = Session.get_last()
+        target_language = last_session.language
+        difficulty = last_session.level
+    # If none, default to beginner Spanish
+    except:
+        target_language = "Spanish"
+        difficulty = 'A1 (Beginner)'
+
+    # custom instructions can be set by user and are included in prompts for gpt
     custom_instructions = "Exercises should be creative, expressive, interesting, and unlikely to repeat."
     feedback_custom_instructions = "Give me concise feedback focusing on errors. Do not include unnecessary praise or fluff."
 
+    
     def run(self):
         WELCOME = """
         -----------------------------------
@@ -98,7 +118,7 @@ class LanguageBuddy:
         while True:
             print(BLUE_SELECT_OPTION)
             print(BLUE(MAIN_MENU_TEXT))
-            self.user_input = input(CARROTS).lower()
+            self.user_input = PROCESS_INPUT().lower()
             if self.user_input in MAIN_MENU_OPTIONS:
                 break
             else:
@@ -127,7 +147,7 @@ class LanguageBuddy:
         print(BLUE(SETTINGS_MENU_TEXT))
         while True:
             print(BLUE_SELECT_OPTION)
-            self.user_input = input(CARROTS).lower()
+            self.user_input = PROCESS_INPUT().lower()
             if self.user_input in SETTINGS_MENU_OPTIONS:
                 break
             else:
@@ -167,7 +187,7 @@ class LanguageBuddy:
         print(BLUE(LEVELS_TEXT))
         while True:
             print(BLUE_SELECT_OPTION)
-            self.user_input = input(CARROTS).lower()
+            self.user_input = PROCESS_INPUT().lower()
             if self.user_input in LEVELS_OPTIONS:
                 if self.user_input in {'0', '1', '2'}:
                     LEVELS_OPTIONS[self.user_input]()
@@ -194,7 +214,7 @@ class LanguageBuddy:
         print(BLUE(LANGUAGE_TEXT))
         while True:
             
-            self.user_input = input(CARROTS)
+            self.user_input = PROCESS_INPUT()
 
             if self.user_input.lower() == "cancel":
                 break
@@ -247,7 +267,7 @@ class LanguageBuddy:
 
         print(STATS)
 
-        self.input = input(CARROTS)
+        self.input = PROCESS_INPUT()
         
         self.main_menu()
 
@@ -279,7 +299,7 @@ class LanguageBuddy:
         print(TRAINING_MENU_TEXT)
         while True:
             print(BLUE_SELECT_OPTION)
-            self.user_input = input(CARROTS).lower()
+            self.user_input = PROCESS_INPUT().lower()
             if self.user_input in TRAINING_OPTIONS:
                 break
             else:
@@ -288,14 +308,14 @@ class LanguageBuddy:
         TRAINING_OPTIONS[self.user_input]()
 
     def translation_menu(self):
-        TRANSLATION_MENU_TEXT = BLUE("""
+        TRANSLATION_MENU_TEXT = BLUE(f"""
               
         ---------TRANSLATION---------
         1. Start New Session               
         2. Set Custom Instructions
         3. Return to Training Menu
         4. Return to Main Menu
-        5. Exit
+        5. {RED_EXIT}
         -----------------------------
               
         """)
@@ -312,7 +332,7 @@ class LanguageBuddy:
 
         while True:
             print(BLUE_SELECT_OPTION)
-            self.user_input = input(CARROTS)
+            self.user_input = PROCESS_INPUT()
             if self.user_input in TRANSLATION_MENU_OPTIONS:
                 break
 
@@ -334,14 +354,14 @@ class LanguageBuddy:
                   
         """)
         print(INSTRUCTIONS)
-        self.custom_instructions = input(CARROTS)
+        self.custom_instructions = PROCESS_INPUT()
         FEEDBACK_INSTRUCTIONS = BLUE("""
                                      
         Enter custom instructions for feedback:
                                      
         """)
         print(FEEDBACK_INSTRUCTIONS)
-        self.feedback_custom_instructions = input(CARROTS)
+        self.feedback_custom_instructions = PROCESS_INPUT()
         print(BLUE("Custom instructions have been set!"))
 
         self.translation_menu()
@@ -382,14 +402,14 @@ class LanguageBuddy:
             formatted_gpt_sentence = BRIGHT(MAGENTA("\n" + self.format_text(gpt_sentence) + "\n"))
             print(formatted_gpt_sentence)
 
-            user_translation = input(CARROTS)
+            user_translation = PROCESS_INPUT()
 
             while user_translation.lower().startswith('flashcard'):
                 # create a flashcard
                 word = user_translation[10:]
                 self.add_flashcard('translation', word, gpt_sentence)
                 print(FLASHCARD_ADDED)
-                user_translation = input(CARROTS)
+                user_translation = PROCESS_INPUT()
 
             feedback = self.get_feedback_for_translation(gpt_sentence, user_translation)
             points = self.get_points_for_translation(gpt_sentence, user_translation)
@@ -419,7 +439,7 @@ FEEDBACK:
             session.save()
 
             print(GO_AGAIN)
-            play_again = input(CARROTS)
+            play_again = PROCESS_INPUT()
             if play_again == '.':
                 break
             
@@ -540,7 +560,7 @@ FEEDBACK:
         gpt_response = data['choices'][0]['message']['content']
         print(BRIGHT(MAGENTA("\n" + self.format_text(gpt_response) + "\n")))
 
-        self.user_input = input(CARROTS)
+        self.user_input = PROCESS_INPUT()
 
         prompt = (
             f"You are my {self.target_language} tutor and we are doing a vocabulary exercise. "
@@ -656,9 +676,6 @@ FEEDBACK:
         else:
             return None
         
-
-    
-
     # TODO 9/7 HALLIE -- implement add flashcard & integrate into translate, vocab exercises
     def get_flashcard_content(self, word):
         CONTENT = (f"Return a tuple (English translation, {self.target_language} definition) "
