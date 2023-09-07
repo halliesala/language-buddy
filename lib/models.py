@@ -254,8 +254,3 @@ class Flashcard:
         return [Flashcard(origin, date, language, level, word, translation, definition, example, id) 
                 for (id, origin, date, language, level, word, translation, definition, example) 
                 in CURSOR.execute(sql, [lang, level]).fetchall()]
-
-    
-
-
-
