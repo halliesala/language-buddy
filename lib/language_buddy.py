@@ -8,9 +8,10 @@ from sys import exit
 from lib.models import Session, Flashcard
 from datetime import date
 from ast import literal_eval
+import random
 
 API_ENDPOINT = "https://api.openai.com/v1/chat/completions"
-API_KEY = "PLACEHOLDER"
+API_KEY = ""
 HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {API_KEY}"
@@ -256,8 +257,8 @@ class LanguageBuddy:
             "translate": self.translation_menu,
             "2": self.vocab_game,
             "vocab game": self.vocab_game,
-            "3": self.flashcard_review,
-            "flashcards": self.flashcard_review,
+            "3": self.flashcard_review_forwards,
+            "flashcards": self.flashcard_review_forwards,
             "4": self.main_menu,
             "return to main menu": self.main_menu,
             "5": self.exit_language_buddy,
@@ -569,6 +570,94 @@ FEEDBACK:
         # We query flashcards from db for selected lang (/level?) 
         # User reviews flashcards -- can flip between sides 
         pass
+
+        # TODO 9/7 KEVAL -- implement flashcard review game
+    def flashcard_review_forwards(self):
+        # We query flashcards from db for selected lang (/level?) 
+        # User reviews flashcards -- can flip between sides 
+
+        INSTRUCTIONS = """
+        -----------------------------
+        Read the definition and guess the word!
+        -----------------------------
+        """
+
+        print(LIGHTRED(INSTRUCTIONS))
+
+        while True:
+            session = Session(date.today(), self.target_language, self.difficulty, 'flashcard_review', 0, 0)
+            session.save()
+            
+            flashcard = self.get_random_flashcard()
+            if not flashcard:
+                print(RED("No more flashcards available."))
+                break
+
+            definition = flashcard.definition
+            print(f"\nDefinition: {definition}")
+            
+            user_input = input("\nEnter the word that matches the definition (or 'n' to quit): ")
+            
+            if user_input == 'n':
+                self.training_menu()
+                break
+
+            if user_input == flashcard.word:
+                print("\nCorrect!\n")
+                session.points_earned += 1
+            else:
+                print(f"\nWrong! The correct word is '{flashcard.word}'\n")
+
+            
+            session.points_possible += 1
+            session.save()
+
+    def flashcard_review_backwards(self):
+
+        INSTRUCTIONS = """
+        -----------------------------
+        Read the word and guess the definition!
+        -----------------------------
+        """
+
+        print(INSTRUCTIONS)
+
+        while True:
+            session = Session(date.today(), self.target_language, self.difficulty, 'flashcard_review', 0, 0)
+            session.save()
+            
+            flashcard = self.get_random_flashcard()
+            if not flashcard:
+                print("No more flashcards available.")
+                break
+
+            word = flashcard.word
+            print(f"\nWord: {word}")
+            
+            user_input = input("\nEnter the definition that matches the word (or 'n' to quit): ")
+            
+            if user_input == 'n':
+                self.training_menu()
+
+            if user_input == flashcard.definition:
+                print("\nCorrect!\n")
+                session.points_earned += 1
+            else:
+                print(f"\nWrong! The correct definition is '{flashcard.definition}'\n")
+
+            
+            session.points_possible += 1
+            session.save()
+
+    def get_random_flashcard(self):
+        flashcards = Flashcard.query_all()
+        if flashcards:
+            return random.choice(flashcards)
+        else:
+            return None
+        
+
+    
 
     # TODO 9/7 HALLIE -- implement add flashcard & integrate into translate, vocab exercises
     def get_flashcard_content(self, word):
