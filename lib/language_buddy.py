@@ -11,7 +11,7 @@ from ast import literal_eval
 import random
 
 API_ENDPOINT = "https://api.openai.com/v1/chat/completions"
-API_KEY = "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"
+API_KEY = ""
 HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {API_KEY}"
