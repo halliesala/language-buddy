@@ -16,8 +16,8 @@ HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {API_KEY}"
 }
-#MODEL = "gpt-4"
-MODEL = "gpt-3.5-turbo"
+MODEL = "gpt-4"
+#MODEL = "gpt-3.5-turbo"
 
 def BLUE(str):
     return f"{Fore.BLUE}" + str + f"{Fore.RESET}"
@@ -100,11 +100,19 @@ class LanguageBuddy:
                     word = user_input[10:]
                     self.add_flashcard(self.state, word, self.gpt_sentence)
                     print(FLASHCARD_ADDED)
+                elif user_input.startswith('update flashcard'):
+                    # run update function
+                    word = user_input[15:]
+                    self.update_flashcard(word)
                 else:
                     return user_input
             except:
                 print(INPUT_ERROR_MESSAGE)
 
+    def update_flashcard(self, word):
+        print(f"TODO: update flashcard {word}")
+        pass
+    
     def main_menu(self):
         MAIN_MENU_OPTIONS = {
             "1": self.settings,
@@ -447,12 +455,17 @@ FEEDBACK:
 
             session.save()
 
-            print(GO_AGAIN)
-            play_again = self.process_input()
-            if play_again == '.':
+            if not self.continue_session():
                 break
             
         self.translation_menu()
+
+    def continue_session(self):
+        print(GO_AGAIN)
+        play_again = self.process_input()
+        if play_again == '.':
+            return False
+        return True
 
     def get_sentence_for_translation(self):
 
@@ -550,8 +563,7 @@ FEEDBACK:
             session.points_possible = session.points_possible + 1
             print(f"\nTOTAL POINTS: {session.points_earned}\n")
             session.save()
-            self.user_input = input(GO_AGAIN)
-            if self.user_input == '.':
+            if not self.continue_session():
                 break
         
         self.training_menu()
@@ -635,7 +647,7 @@ FEEDBACK:
         print(FLASHCARD_MENU_TEXT)
         while True:
             print(BLUE_SELECT_OPTION)
-            self.user_input = input(CARROTS).lower()
+            self.user_input = self.process_input().lower()
             if self.user_input in FLASHCARD_OPTIONS:
                 break
             else:
@@ -690,9 +702,10 @@ FEEDBACK:
                 print(LIGHTRED(f"| {line.center(FLASHCARD_WIDTH)} |"))
             print(LIGHTRED(" ----------------------------------------------------"))
 
-            user_input = input(LIGHTRED("\nEnter the word that matches the definition (or 'n' to quit): "))
+            print(LIGHTRED("\nEnter the word that matches the definition (or '.' to quit): "))
+            user_input = self.process_input()
             
-            if user_input == 'n':
+            if user_input == '.':
                 self.flashcard_review()
                 break
 
@@ -701,6 +714,9 @@ FEEDBACK:
                 session.points_earned += 1
             else:
                 print(f"\nWrong! The correct word is '{flashcard.word}'\n")
+
+            if not self.continue_session():
+                break
 
             session.points_possible += 1
             session.save()
@@ -737,21 +753,22 @@ FEEDBACK:
             print(LIGHTRED("|                                                    |"))
             print(LIGHTRED(" ----------------------------------------------------"))
 
-            user_input = input(LIGHTRED("\nEnter the definition that matches the word (or 'n' to quit): "))
+            print(LIGHTRED("\nEnter the definition that matches the word (or '.' to quit): "))
+            user_input = self.process_input()
             
-            if user_input == 'n':
+            if user_input == '.':
                 self.flashcard_review()
                 break
 
             if user_input == flashcard.definition:
                 print("\nCorrect!\n")
                 session.points_earned += 1
-                print(GO_AGAIN)
-                play_again = input(CARROTS)
-                if play_again == '.':
-                    break
             else:
                 print(f"\nWrong! The correct definition is '{flashcard.definition}'\n")
+
+            
+            if not self.continue_session():
+                break
 
             session.points_possible += 1
             session.save()
