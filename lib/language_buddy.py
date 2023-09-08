@@ -227,7 +227,7 @@ class LanguageBuddy:
         print(BLUE(LANGUAGE_TEXT))
         while True:
             
-            self.user_input = PROCESS_INPUT()
+            self.user_input = self.process_input()
 
             if self.user_input.lower() == "cancel":
                 break
@@ -367,7 +367,7 @@ class LanguageBuddy:
                   
         """)
         print(INSTRUCTIONS)
-        self.custom_instructions = PROCESS_INPUT()
+        self.custom_instructions = self.process_input()
         FEEDBACK_INSTRUCTIONS = BLUE("""
                                      
         Enter custom instructions for feedback:
@@ -418,7 +418,7 @@ class LanguageBuddy:
                 word = user_translation[10:]
                 self.add_flashcard('translation', word, self.gpt_sentence)
                 print(FLASHCARD_ADDED)
-                user_translation = PROCESS_INPUT()
+                user_translation = self.process_input()
 
             feedback = self.get_feedback_for_translation(self.gpt_sentence, user_translation)
             points = self.get_points_for_translation(self.gpt_sentence, user_translation)

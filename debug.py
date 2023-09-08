@@ -1,6 +1,8 @@
 from lib.models import Session, Flashcard
-from lib.language_buddy import HEADERS, LanguageBuddy
+from lib.language_buddy import HEADERS, MODEL, API_ENDPOINT, API_KEY, LanguageBuddy
 import textwrap
+import json
+import requests
 
 from colorama import Fore, Style
 
@@ -16,6 +18,22 @@ flashcard_3 = Flashcard("Textbook A", "2023-09-07", "Spanish", "Beginner", "bail
 flashcard_4 = Flashcard("Textbook B", "2023-09-07", "Russian", "Beginner", "кот", "cat", "A domesticated feline", "Это мой кот, Миша.", 4)
 flashcard_5 = Flashcard("Textbook B", "2023-09-07", "Russian", "Beginner", "бассейн", "pool", "A place for swimming", "Дети играют в бассейне.", 5)
 
+def test_api():
+    validate_language_data = {
+            "model": MODEL,
+            "messages": [{
+                "role": "user",
+                "content": f"Give me a dad joke."
+            }],
+            "temperature": 0.7
+        }
+        # Make the POST request
+    response = requests.post(
+        API_ENDPOINT, headers=HEADERS, data=json.dumps(validate_language_data))
+
+    # Get the JSON response
+    response_data = response.json()
+    print(response_data)
 
 app = LanguageBuddy()
 
