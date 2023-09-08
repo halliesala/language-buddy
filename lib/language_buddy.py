@@ -608,11 +608,41 @@ FEEDBACK:
     # TODO 9/7 KEVAL -- implement flashcard review game
     def flashcard_review(self):
         self.state = "flashcard_review"
+        FLASHCARD_OPTIONS = {
+            "1": self.flashcard_review_forwards,
+            "flashcards forwards": self.flashcard_review_forwards,
+            "2": self.flashcard_review_backwards,
+            "flashcards backwards": self.flashcard_review_backwards,
+            "3": self.training_menu,
+            "return to training menu": self.training_menu,
+            "4": self.main_menu,
+            "return to main menu": self.main_menu,
+            "5": self.exit_language_buddy,
+            "exit": self.exit_language_buddy,
+        }
+        FLASHCARD_MENU_TEXT = BLUE(f"""
 
-        # We query flashcards from db for selected lang (/level?) 
-        # User reviews flashcards -- can flip between sides 
-        pass
+        --------FLASHCARD MENU--------
+        1. Flashcards Forwards - Type in the matching word!
+        2. Flashcards Backwards - Type in the matching definition!
+        3. Return to Training Menu
+        4. Return to Main Menu
+        5. {RED_EXIT}
+        -----------------------------
 
+        """)
+
+        print(FLASHCARD_MENU_TEXT)
+        while True:
+            print(BLUE_SELECT_OPTION)
+            self.user_input = input(CARROTS).lower()
+            if self.user_input in FLASHCARD_OPTIONS:
+                break
+            else:
+                print(INVALID_INPUT)
+
+        FLASHCARD_OPTIONS[self.user_input]()
+        
     # TODO 9/7 KEVAL -- implement flashcard review game
     def flashcard_review_forwards(self):
         # We query flashcards from db for selected lang (/level?) 
@@ -626,6 +656,9 @@ FEEDBACK:
 
         print(LIGHTRED(INSTRUCTIONS))
 
+        FLASHCARD_HEIGHT = 4
+        FLASHCARD_WIDTH = 50
+
         while True:
             session = Session(date.today(), self.target_language, self.difficulty, 'flashcard_review', 0, 0)
             session.save()
@@ -636,12 +669,31 @@ FEEDBACK:
                 break
 
             definition = flashcard.definition
-            print(f"\nDefinition: {definition}")
-            
-            user_input = input("\nEnter the word that matches the definition (or 'n' to quit): ")
+            lines = []
+            for line in definition.splitlines():
+                # Wrap long lines into multiple lines
+                while len(line) > FLASHCARD_WIDTH - 4:
+                    lines.append(line[:FLASHCARD_WIDTH - 4])
+                    line = line[FLASHCARD_WIDTH - 4:]
+                lines.append(line)
+
+            # Truncate or pad lines to reach the fixed height
+            if len(lines) > FLASHCARD_HEIGHT:
+                lines = lines[:FLASHCARD_HEIGHT]
+            else:
+                lines.extend([''] * (FLASHCARD_HEIGHT - len(lines)))
+
+            print(LIGHTRED(" ----------------------------------------------------"))
+            print(LIGHTRED("|                                                    |"))
+            print(LIGHTRED("|                                                    |"))
+            for line in lines:
+                print(LIGHTRED(f"| {line.center(FLASHCARD_WIDTH)} |"))
+            print(LIGHTRED(" ----------------------------------------------------"))
+
+            user_input = input(LIGHTRED("\nEnter the word that matches the definition (or 'n' to quit): "))
             
             if user_input == 'n':
-                self.training_menu()
+                self.flashcard_review()
                 break
 
             if user_input == flashcard.word:
@@ -650,9 +702,9 @@ FEEDBACK:
             else:
                 print(f"\nWrong! The correct word is '{flashcard.word}'\n")
 
-            
             session.points_possible += 1
             session.save()
+
 
     def flashcard_review_backwards(self):
 
@@ -664,30 +716,43 @@ FEEDBACK:
 
         print(INSTRUCTIONS)
 
+        FLASHCARD_WIDTH = 50  # You can adjust the width as needed
+
         while True:
             session = Session(date.today(), self.target_language, self.difficulty, 'flashcard_review', 0, 0)
             session.save()
             
             flashcard = self.get_random_flashcard()
             if not flashcard:
-                print("No more flashcards available.")
+                print(RED("No more flashcards available."))
                 break
 
             word = flashcard.word
-            print(f"\nWord: {word}")
-            
-            user_input = input("\nEnter the definition that matches the word (or 'n' to quit): ")
+            print(LIGHTRED(" ----------------------------------------------------"))
+            print(LIGHTRED("|                                                    |"))
+            print(LIGHTRED("|                                                    |"))
+            print(LIGHTRED(f"|   {word.center(FLASHCARD_WIDTH - 4)}   |"))
+            print(LIGHTRED("|                                                    |"))
+            print(LIGHTRED("|                                                    |"))
+            print(LIGHTRED("|                                                    |"))
+            print(LIGHTRED(" ----------------------------------------------------"))
+
+            user_input = input(LIGHTRED("\nEnter the definition that matches the word (or 'n' to quit): "))
             
             if user_input == 'n':
-                self.training_menu()
+                self.flashcard_review()
+                break
 
             if user_input == flashcard.definition:
                 print("\nCorrect!\n")
                 session.points_earned += 1
+                print(GO_AGAIN)
+                play_again = input(CARROTS)
+                if play_again == '.':
+                    break
             else:
                 print(f"\nWrong! The correct definition is '{flashcard.definition}'\n")
 
-            
             session.points_possible += 1
             session.save()
 
