@@ -16,6 +16,8 @@ HEADERS = {
     "Content-Type": "application/json",
     "Authorization": f"Bearer {API_KEY}"
 }
+#MODEL = "gpt-4"
+MODEL = "gpt-3.5-turbo"
 
 def BLUE(str):
     return f"{Fore.BLUE}" + str + f"{Fore.RESET}"
@@ -42,18 +44,15 @@ GO_AGAIN = BLUE("""
         -----------------------------
 """)
 INPUT_ERROR_MESSAGE = BRIGHT(RED("\nError processing input -- please try again.\n"))
+FLASHCARD_ADDED = BRIGHT(GREEN("\nFlashcard added.\n"))
                 
-def PROCESS_INPUT():
-    while True:
-        try:
-            user_input = input(CARROTS)
-            return user_input
-        except:
-            print(INPUT_ERROR_MESSAGE)
+
 
 class LanguageBuddy:
 
     source_language = "English"
+    gpt_sentence = ""
+    state = ""
 
     # Use most recent session settings
     try:
@@ -66,7 +65,7 @@ class LanguageBuddy:
         difficulty = 'A1 (Beginner)'
 
     # custom instructions can be set by user and are included in prompts for gpt
-    custom_instructions = "Exercises should be creative, expressive, interesting, and unlikely to repeat."
+    custom_instructions = ""
     feedback_custom_instructions = "Give me concise feedback focusing on errors. Do not include unnecessary praise or fluff."
 
     
@@ -91,6 +90,20 @@ class LanguageBuddy:
         """
         print(BRIGHT(MAGENTA(EXIT_TEXT)))
         exit()
+
+    def process_input(self):
+        while True:
+            try:
+                user_input = input(CARROTS)
+                if user_input.startswith('flashcard'):
+                    # create a flashcard
+                    word = user_input[10:]
+                    self.add_flashcard(self.state, word, self.gpt_sentence)
+                    print(FLASHCARD_ADDED)
+                else:
+                    return user_input
+            except:
+                print(INPUT_ERROR_MESSAGE)
 
     def main_menu(self):
         MAIN_MENU_OPTIONS = {
@@ -118,7 +131,7 @@ class LanguageBuddy:
         while True:
             print(BLUE_SELECT_OPTION)
             print(BLUE(MAIN_MENU_TEXT))
-            self.user_input = PROCESS_INPUT().lower()
+            self.user_input = self.process_input().lower()
             if self.user_input in MAIN_MENU_OPTIONS:
                 break
             else:
@@ -147,7 +160,7 @@ class LanguageBuddy:
         print(BLUE(SETTINGS_MENU_TEXT))
         while True:
             print(BLUE_SELECT_OPTION)
-            self.user_input = PROCESS_INPUT().lower()
+            self.user_input = self.process_input().lower()
             if self.user_input in SETTINGS_MENU_OPTIONS:
                 break
             else:
@@ -187,7 +200,7 @@ class LanguageBuddy:
         print(BLUE(LEVELS_TEXT))
         while True:
             print(BLUE_SELECT_OPTION)
-            self.user_input = PROCESS_INPUT().lower()
+            self.user_input = self.process_input().lower()
             if self.user_input in LEVELS_OPTIONS:
                 if self.user_input in {'0', '1', '2'}:
                     LEVELS_OPTIONS[self.user_input]()
@@ -221,7 +234,7 @@ class LanguageBuddy:
 
             
             validate_language_data = {
-                "model": "gpt-3.5-turbo",
+                "model": MODEL,
                 "messages": [{
                     "role": "user",
                     "content": f"Does gpt-3.5-turbo support the following language: {self.user_input}? Return 'TRUE' or 'FALSE'. Do not return any other text."
@@ -267,7 +280,7 @@ class LanguageBuddy:
 
         print(STATS)
 
-        self.input = PROCESS_INPUT()
+        self.input = self.process_input()
         
         self.main_menu()
 
@@ -299,7 +312,7 @@ class LanguageBuddy:
         print(TRAINING_MENU_TEXT)
         while True:
             print(BLUE_SELECT_OPTION)
-            self.user_input = PROCESS_INPUT().lower()
+            self.user_input = self.process_input().lower()
             if self.user_input in TRAINING_OPTIONS:
                 break
             else:
@@ -332,7 +345,7 @@ class LanguageBuddy:
 
         while True:
             print(BLUE_SELECT_OPTION)
-            self.user_input = PROCESS_INPUT()
+            self.user_input = self.process_input()
             if self.user_input in TRANSLATION_MENU_OPTIONS:
                 break
 
@@ -361,12 +374,14 @@ class LanguageBuddy:
                                      
         """)
         print(FEEDBACK_INSTRUCTIONS)
-        self.feedback_custom_instructions = PROCESS_INPUT()
+        self.feedback_custom_instructions = self.process_input()
         print(BLUE("Custom instructions have been set!"))
 
         self.translation_menu()
 
     def translation_session(self):
+
+        self.state = 'translation'
 
         # Generate a sentence for user to translate:
         # ex., "The cat is on the roof."
@@ -387,32 +402,26 @@ class LanguageBuddy:
 
         """)
 
-        FLASHCARD_ADDED = BLUE(f"""
-
-        -----------------------------
-        Flashcard added. Add another flashcard or continue exercise.
-        -----------------------------
-
-        """)
+        
 
         while True:
             print(INSTRUCTIONS)
 
-            gpt_sentence = self.get_sentence_for_translation()
-            formatted_gpt_sentence = BRIGHT(MAGENTA("\n" + self.format_text(gpt_sentence) + "\n"))
+            self.gpt_sentence = self.get_sentence_for_translation()
+            formatted_gpt_sentence = BRIGHT(MAGENTA("\n" + self.format_text(self.gpt_sentence) + "\n"))
             print(formatted_gpt_sentence)
 
-            user_translation = PROCESS_INPUT()
+            user_translation = self.process_input()
 
             while user_translation.lower().startswith('flashcard'):
                 # create a flashcard
                 word = user_translation[10:]
-                self.add_flashcard('translation', word, gpt_sentence)
+                self.add_flashcard('translation', word, self.gpt_sentence)
                 print(FLASHCARD_ADDED)
                 user_translation = PROCESS_INPUT()
 
-            feedback = self.get_feedback_for_translation(gpt_sentence, user_translation)
-            points = self.get_points_for_translation(gpt_sentence, user_translation)
+            feedback = self.get_feedback_for_translation(self.gpt_sentence, user_translation)
+            points = self.get_points_for_translation(self.gpt_sentence, user_translation)
 
             
             session.points_earned = session.points_earned + points * 0.01
@@ -439,7 +448,7 @@ FEEDBACK:
             session.save()
 
             print(GO_AGAIN)
-            play_again = PROCESS_INPUT()
+            play_again = self.process_input()
             if play_again == '.':
                 break
             
@@ -447,11 +456,20 @@ FEEDBACK:
 
     def get_sentence_for_translation(self):
 
+        CONTENT = (f"You are my {self.target_language} language tutor." 
+                   f"We are doing a translation exercise. "
+                   f"Give me a {self.target_language} sentence to translate into English. "
+                   f"The difficulty of this sentence should be {self.difficulty}. "
+                   f"Exercises should be creative, erudite, interesting, and unlikely to repeat if this API request is repeated."
+                   f"{self.custom_instructions} "
+                   f"Return only the sentence for translation; include no other content.")
+
+
         get_sentence_data = {
-            "model": "gpt-3.5-turbo",
+            "model": MODEL,
             "messages": [{
                 "role": "user",
-                "content": f"You are my {self.target_language} language tutor. We are doing a translation exercise. Give me a {self.target_language} sentence to translate into English. The difficulty of this sentence should be {self.difficulty}. {self.custom_instructions} Return only the sentence for translation; include no other content."
+                "content": CONTENT
             }],
             "temperature": 0.7
         }
@@ -466,7 +484,7 @@ FEEDBACK:
 
     def get_feedback_for_translation(self, gpt_sentence, user_translation):
         get_feedback_data = {
-            "model": "gpt-3.5-turbo",
+            "model": MODEL,
             "messages": [{
                 "role": "user",
                 "content": f"You are my ${self.target_language} language tutor. We are doing a translation exercise. You gave me the following {self.target_language} to translate into {self.source_language}: {gpt_sentence}. Here is my translation: \"{user_translation}\". {self.feedback_custom_instructions}"
@@ -482,7 +500,7 @@ FEEDBACK:
     def get_points_for_translation(self, gpt_sentence, user_translation):
         CONTENT = f"Grade the following translation out of 100 points, where 100 is perfect. A translation with meaningful errors should receive no more than 70 points. A nonsensical translation should receive 0 points. Return only the number of points awarded. Do not return any other text. Source text: '{gpt_sentence} Translation: '{user_translation}'"
         get_score_data = {
-            "model": "gpt-3.5-turbo",
+            "model": MODEL,
             "messages": [{
                 "role": "user",
                 "content": CONTENT
@@ -501,6 +519,9 @@ FEEDBACK:
         return points
 
     def vocab_game(self):
+
+        self.state = "vocab"
+
         # We could get words from word list and have OpenAI API provide definitions;
         # Or, we could just have the OpenAI API pick the word
         # #
@@ -536,7 +557,6 @@ FEEDBACK:
         self.training_menu()
 
     def vocab_exercise(self):
-        conversation = []
         prompt = (""
         f"You are my {self.target_language} tutor and we are doing a vocabulary exercise. "
         f"You give me a clue in  describing a word; I guess the word. "
@@ -545,7 +565,7 @@ FEEDBACK:
         f"{self.custom_instructions}"
         "")
         get_data = {
-            "model": "gpt-3.5-turbo",
+            "model": MODEL,
             "messages": [{
                 "role": "user",
                 "content": f"{prompt}"
@@ -557,20 +577,20 @@ FEEDBACK:
 
         # Get the JSON response
         data = response.json()
-        gpt_response = data['choices'][0]['message']['content']
-        print(BRIGHT(MAGENTA("\n" + self.format_text(gpt_response) + "\n")))
+        self.gpt_sentence = data['choices'][0]['message']['content']
+        print(BRIGHT(MAGENTA("\n" + self.format_text(self.gpt_sentence) + "\n")))
 
-        self.user_input = PROCESS_INPUT()
+        self.user_input = self.process_input()
 
         prompt = (
             f"You are my {self.target_language} tutor and we are doing a vocabulary exercise. "
-            f"You gave me the following clue: {gpt_response} "
+            f"You gave me the following clue: {self.gpt_sentence} "
             f"Here is my guess: {self.user_input}"
             f"Is this guess correct? Give feedback in {self.target_language}. If my answer is wrong, tell me the correct answer and its English translation."
             f"Feedback must be appropriate for level {self.difficulty}. No English should be used except to translate the correct answer."
         )
         get_data = {
-            "model": "gpt-3.5-turbo",
+            "model": MODEL,
             "messages": [{
                 "role": "user",
                 "content": f"{prompt}"
@@ -582,11 +602,13 @@ FEEDBACK:
 
         # Get the JSON response
         data = response.json()
-        gpt_response = data['choices'][0]['message']['content']
-        print(BRIGHT(MAGENTA("\n" + self.format_text(gpt_response) + "\n")))
+        self.gpt_sentence = data['choices'][0]['message']['content']
+        print(BRIGHT(MAGENTA("\n" + self.format_text(self.gpt_sentence) + "\n")))
 
     # TODO 9/7 KEVAL -- implement flashcard review game
     def flashcard_review(self):
+        self.state = "flashcard_review"
+
         # We query flashcards from db for selected lang (/level?) 
         # User reviews flashcards -- can flip between sides 
         pass
@@ -682,7 +704,7 @@ FEEDBACK:
                    f"for the {self.target_language} word '{word}'. Return ONLY the tuple.")
         # Send OpenAI a request for a Flashcard initialization
         get_flashcard_data = {
-            "model": "gpt-3.5-turbo",
+            "model": MODEL,
             "messages": [{
                 "role": "user",
                 "content": CONTENT
