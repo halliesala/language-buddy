@@ -115,30 +115,35 @@ class LanguageBuddy:
     
     def main_menu(self):
         MAIN_MENU_OPTIONS = {
-            "1": self.settings,
-            "settings": self.settings,
+            "1": self.training_menu,
+            "train": self.training_menu,
             "2": self.view_stats,
             "view stats": self.view_stats,
-            "3": self.training_menu,
-            "train": self.training_menu,
+            "3": self.settings,
+            "settings": self.settings,
             "4": self.exit_language_buddy,
             "exit": self.exit_language_buddy
 
         }
         MAIN_MENU_TEXT = f"""
 
+        -------CURRENT SETTINGS -----
+        Language:   {self.target_language}
+        Level:      {self.difficulty}
+        -----------------------------
+
         ----------MAIN MENU----------
-        1. Settings
+        1. Train
         2. View Stats
-        3. Train
+        3. Settings
         4. {RED_EXIT}
         -----------------------------
 
         """
 
+        print(BLUE(MAIN_MENU_TEXT))
         while True:
             print(BLUE_SELECT_OPTION)
-            print(BLUE(MAIN_MENU_TEXT))
             self.user_input = self.process_input().lower()
             if self.user_input in MAIN_MENU_OPTIONS:
                 break
@@ -274,12 +279,12 @@ class LanguageBuddy:
         STATS = BLUE(f"""
 
         ------------STATS------------
-        POINTS EARNED:\t\t{Session.total_points_earned()}
-        POINTS ATTEMPTED:\t{Session.total_points_attempted()}
+        POINTS EARNED:\t\t{Session.total_points_earned():.2f}
+        POINTS ATTEMPTED:\t{Session.total_points_attempted():.2f}
         TOTAL SESSIONS:\t\t{Session.count_sessions()}
         TOTAL LANGUAGES: \t{Session.count_distinct_languages()}
         ACCURACY:\t\t{(Session.accuracy()*100):.2f}%
-        HIGH SCORE:\t\t{Session.session_high_score()}
+        HIGH SCORE:\t\t{Session.session_high_score():.2f}
         -----------------------------
 
         Hit 'Enter' to return to main menu.
@@ -451,7 +456,7 @@ FEEDBACK:
 """))
             print(FORMATTED_FEEDBACK)
             print(
-                f"STATS: {session.points_earned} / {session.points_possible} = {(session.points_earned / session.points_possible):.2f}%")
+                f"STATS: {session.points_earned} / {session.points_possible} = {100 * (session.points_earned / session.points_possible):.2f}%")
 
             session.save()
 
@@ -716,6 +721,7 @@ FEEDBACK:
                 print(f"\nWrong! The correct word is '{flashcard.word}'\n")
 
             if not self.continue_session():
+                self.flashcard_review()
                 break
 
             session.points_possible += 1
@@ -768,13 +774,17 @@ FEEDBACK:
 
             
             if not self.continue_session():
+                self.flashcard_review()
                 break
 
             session.points_possible += 1
             session.save()
 
+            session.points_possible += 1
+            session.save()
+
     def get_random_flashcard(self):
-        flashcards = Flashcard.query_all()
+        flashcards = Flashcard.query_by_lang_and_level(self.target_language, self.difficulty)
         if flashcards:
             return random.choice(flashcards)
         else:
